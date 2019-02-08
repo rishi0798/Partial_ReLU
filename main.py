@@ -13,7 +13,7 @@ import torchvision.transforms as transforms
 import os
 import argparse
 
-from vgg_mnist import VGG
+from vgg import VGG
 from utils import progress_bar
 
 
