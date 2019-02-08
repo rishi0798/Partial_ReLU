@@ -14,6 +14,7 @@ import os
 import argparse
 
 from vgg import VGG
+from cyclic_lr import CyclicLR
 from utils import progress_bar
 
 
@@ -67,6 +68,7 @@ if args.resume:
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+scheduler = CyclicLR(optimizer)
 
 # Training
 def train(epoch):
@@ -127,5 +129,6 @@ def test(epoch):
 
 
 for epoch in range(start_epoch, start_epoch+200):
+    scheduler.step()
     train(epoch)
     test(epoch)
