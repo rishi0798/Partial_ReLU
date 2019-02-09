@@ -23,15 +23,17 @@ class VGG(nn.Module):
         return out
 
     def _make_layers(self, cfg, part):
+        n_part = part
         layers = []
         in_channels = 3
-        for i,x in enumerate(cfg):
+        for x in cfg:
             if x == 'M':
                 layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
-                if i <= part:
+                if n_part > 0:
                     layers += [Conv2d_part(in_channels, x, kernel_size=3, padding=1,thresh_factor = -0.1),
                                nn.BatchNorm2d(x)]
+                    n_part -= 1
                 else:
                     layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
                                nn.BatchNorm2d(x),
