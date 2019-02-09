@@ -181,14 +181,15 @@ class Conv2d_part(_ConvNd):
     def forward(self, input):
         compare = F.conv2d(input[:,:self.in_channels//2],self.weight[:,:self.in_channels//2,:,:],self.bias,
                         self.stride,self.padding,self.dilation,self.groups)
-        check_sparse = compare.clone()
+        compare = compare.detach()
+        # check_sparse = compare.clone()
         temp = F.relu(-compare-(self.thresh+1.0))/2
         compare = F.relu(1.0-temp)
         # print(self.thresh)
-        check_sparse[check_sparse>=self.thresh] = 1.0
-        check_sparse[check_sparse<self.thresh] = 0.0
+        # check_sparse[check_sparse>=self.thresh] = 1.0
+        # check_sparse[check_sparse<self.thresh] = 0.0
         # print(check_sparse)
-        i_s = compare.shape
+        # i_s = compare.shape
         # print(1-torch.sum(check_sparse,[0,1,2,3])/(i_s[0]*i_s[1]*i_s[2]*i_s[3]))
         layer = F.conv2d(input, self.weight, self.bias, self.stride,
                         self.padding, self.dilation, self.groups)
