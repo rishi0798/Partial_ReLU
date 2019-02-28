@@ -14,6 +14,7 @@ import os
 import argparse
 
 from vgg import VGG
+from thresh_loss import thresh_efficiency_loss
 from cyclic_lr import CyclicLR
 from utils import progress_bar
 
@@ -26,6 +27,8 @@ args = parser.parse_args()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+n = 6
+lam = 1/n
 
 # Data
 print('==> Preparing data..')
@@ -51,7 +54,7 @@ classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 
 # Model
 print('==> Building model..')
-net = VGG('VGG13',6)
+net = VGG('VGG13',n)
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
@@ -72,6 +75,9 @@ scheduler = CyclicLR(optimizer)
 
 # Training
 def train(epoch):
+    '''
+    Defines one training epoch
+    '''
     print('\nEpoch: %d' % epoch)
     net.train()
     train_loss = 0
@@ -81,7 +87,7 @@ def train(epoch):
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = net(inputs)
-        loss = criterion(outputs, targets)
+        loss = criterion(outputs, targets) + lam*thresh_efficiency_loss(net)
         loss.backward()
         optimizer.step()
 
@@ -94,6 +100,9 @@ def train(epoch):
             % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
 def test(epoch):
+    '''
+    Defines a test/validation epoch
+    '''
     global best_acc
     net.eval()
     test_loss = 0
