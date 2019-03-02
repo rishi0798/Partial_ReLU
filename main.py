@@ -18,6 +18,7 @@ from thresh_loss import thresh_efficiency_loss
 from cyclic_lr import CyclicLR
 from utils import progress_bar
 
+# TO-DO: use sacred to run experiments and create config for hyperparams
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
@@ -29,6 +30,8 @@ best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 n = 6
 lam = 1/n
+thresh_learn = 10
+learn_t = False
 
 # Data
 print('==> Preparing data..')
@@ -74,7 +77,7 @@ optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5
 scheduler = CyclicLR(optimizer)
 
 # Training
-def train(epoch):
+def train(epoch,learn_t=False):
     '''
     Defines one training epoch
     '''
@@ -87,7 +90,9 @@ def train(epoch):
         inputs, targets = inputs.to(device), targets.to(device)
         optimizer.zero_grad()
         outputs = net(inputs)
-        loss = criterion(outputs, targets) + lam*thresh_efficiency_loss(net)
+        loss = criterion(outputs, targets)
+        if learn_t:
+            loss += lam*thresh_efficiency_loss(net)
         loss.backward()
         optimizer.step()
 
@@ -136,8 +141,14 @@ def test(epoch):
         torch.save(state, './checkpoint/ckpt.t7')
         best_acc = acc
 
-
 for epoch in range(start_epoch, start_epoch+200):
     scheduler.batch_step()
-    train(epoch)
+    for name,p in net.named_parameters():
+        check = name.split('.')[-1]
+        if check == 'thresh':
+            print(p)
+    if epoch == thresh_learn:
+        learn_t = True
+        print("Starting to learn threshold")
+    train(epoch,learn_t)
     test(epoch)
