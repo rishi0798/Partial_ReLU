@@ -30,7 +30,7 @@ best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 n = 6
 lam = 1/n
-thresh_learn = 10
+thresh_learn = 4
 learn_t = False
 
 # Data
@@ -70,7 +70,7 @@ if args.resume:
     checkpoint = torch.load('./checkpoint/ckpt.t7')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
+    start_epoch = checkpoint['epoch'] + 1
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
@@ -92,7 +92,7 @@ def train(epoch,learn_t=False):
         outputs = net(inputs)
         loss = criterion(outputs, targets)
         if learn_t:
-            loss += lam*thresh_efficiency_loss(net)
+            loss = loss + lam*thresh_efficiency_loss(net)
         loss.backward()
         optimizer.step()
 
@@ -141,6 +141,9 @@ def test(epoch):
         torch.save(state, './checkpoint/ckpt.t7')
         best_acc = acc
 
+if start_epoch >= thresh_learn:
+    learn_t = True
+    print("Learning Threshold")
 for epoch in range(start_epoch, start_epoch+200):
     scheduler.batch_step()
     for name,p in net.named_parameters():
