@@ -11,6 +11,6 @@ def thresh_efficiency_loss(net,pos_w=0.1):
     for name,p in net.named_parameters():
         check = name.split('.')[-1]
         if check == 'thresh':
-            t_loss += torch.pow(F.relu(-(p+1.0))+1.0,2) - pos_w*(F.relu(p+1.0)-1.0)
+            t_loss += torch.pow(F.relu(-(p+1.0))+1.0,2) - (pos_w*(F.relu(p+1.0)-1.0)-1+pos_w)
     
     return t_loss

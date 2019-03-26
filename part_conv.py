@@ -61,7 +61,7 @@ class _ConvNd(nn.Module):
 class Conv2d_part(_ConvNd):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, thresh_factor = -1, dilation=1, groups=1, bias=True):
+                 padding=0, thresh_factor = -1, thresh_slope = 0.5 ,dilation=1, groups=1, bias=True):
         kernel_size = nn.modules.utils._pair(kernel_size)
         stride = nn.modules.utils._pair(stride)
         padding = nn.modules.utils._pair(padding)
@@ -70,13 +70,14 @@ class Conv2d_part(_ConvNd):
             in_channels, out_channels, kernel_size, stride, padding, dilation,
             False, nn.modules.utils._pair(0), groups, bias)
         self.thresh = nn.Parameter(torch.Tensor([thresh_factor]))
+        self.thresh_slope = thresh_slope
 
     def forward(self, input):
         compare = F.conv2d(input[:,:self.in_channels//2],self.weight[:,:self.in_channels//2,:,:],self.bias,
                         self.stride,self.padding,self.dilation,self.groups)
         compare = compare.detach()
         # check_sparse = compare.clone()
-        temp = F.relu(-compare-(self.thresh+1.0))/2
+        temp = F.relu(-compare+(self.thresh+0.5/self.thresh_slope))*self.thresh_slope
         compare = F.relu(1.0-temp)
         # check_sparse[check_sparse>=self.thresh] = 1.0
         # check_sparse[check_sparse<self.thresh] = 0.0
