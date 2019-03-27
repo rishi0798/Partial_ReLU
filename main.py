@@ -64,18 +64,21 @@ if device == 'cuda':
     net = torch.nn.DataParallel(net)
     cudnn.benchmark = True
 
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+scheduler = CyclicLR(optimizer)
+
 if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
     checkpoint = torch.load('./checkpoint/ckpt.t7')
+    optim_ck = torch.load('./checkpoint/optim.t7')
     net.load_state_dict(checkpoint['net'])
+    optimizer.load_state_dict(optim_ck['optim'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch'] + 1
 
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
-scheduler = CyclicLR(optimizer)
 
 # Training
 def train(epoch,learn_t=False):
@@ -137,9 +140,14 @@ def test(epoch):
             'acc': acc,
             'epoch': epoch,
         }
+        optim_state = {
+            'optim': optimizer.state_dict(),
+            'epoch': epoch,
+        }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/ckpt.t7')
+        torch.save(optim_state,'./checkpoint/optim.t7')
         best_acc = acc
 
 if start_epoch >= thresh_learn:
@@ -147,10 +155,10 @@ if start_epoch >= thresh_learn:
     print("Learning Threshold")
 for epoch in range(start_epoch, start_epoch+n_epochs):
     scheduler.batch_step()
-    for name,p in net.named_parameters():
-        check = name.split('.')[-1]
-        if check == 'thresh':
-            print(p)
+    # for name,p in net.named_parameters():
+    #     check = name.split('.')[-1]
+        # if check == 'thresh':
+            # print(p)
     if epoch == thresh_learn:
         learn_t = True
         print("Starting to learn threshold")

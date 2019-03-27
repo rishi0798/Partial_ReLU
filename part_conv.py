@@ -61,7 +61,7 @@ class _ConvNd(nn.Module):
 class Conv2d_part(_ConvNd):
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, thresh_factor = -1, thresh_slope = 0.5 ,dilation=1, groups=1, bias=True):
+                 padding=0, thresh_factor = -1, comp_channels =  2 ,thresh_slope = 0.5 ,dilation=1, groups=1, bias=True):
         kernel_size = nn.modules.utils._pair(kernel_size)
         stride = nn.modules.utils._pair(stride)
         padding = nn.modules.utils._pair(padding)
@@ -69,11 +69,12 @@ class Conv2d_part(_ConvNd):
         super(Conv2d_part, self).__init__(
             in_channels, out_channels, kernel_size, stride, padding, dilation,
             False, nn.modules.utils._pair(0), groups, bias)
-        self.thresh = nn.Parameter(torch.Tensor([thresh_factor]))
+        self.thresh = nn.Parameter(thresh_factor*(torch.ones(out_channels,1,1)))
         self.thresh_slope = thresh_slope
+        self.comp_channels = comp_channels
 
     def forward(self, input):
-        compare = F.conv2d(input[:,:self.in_channels//2],self.weight[:,:self.in_channels//2,:,:],self.bias,
+        compare = F.conv2d(input[:,:self.in_channels//self.comp_channels],self.weight[:,:self.in_channels//2,:,:],self.bias,
                         self.stride,self.padding,self.dilation,self.groups)
         compare = compare.detach()
         # check_sparse = compare.clone()
