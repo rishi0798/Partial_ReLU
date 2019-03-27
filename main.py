@@ -29,7 +29,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 n = 6
-lam = 1/n
+# lam = 1/n
 thresh_learn = 50
 learn_t = False
 n_epochs = 1000
@@ -63,6 +63,16 @@ net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
     cudnn.benchmark = True
+
+# calculate total number of threshold parameters
+
+no_thresh_p = 0
+for name,p in net.named_parameters():
+        check = name.split('.')[-1]
+        if check == 'thresh':
+            no_thresh_p += p.numel()
+
+lam = 1/no_thresh_p
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
