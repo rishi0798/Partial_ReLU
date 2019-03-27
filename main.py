@@ -30,8 +30,9 @@ best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 n = 6
 lam = 1/n
-thresh_learn = 4
+thresh_learn = 50
 learn_t = False
+n_epochs = 1000
 
 # Data
 print('==> Preparing data..')
@@ -144,7 +145,7 @@ def test(epoch):
 if start_epoch >= thresh_learn:
     learn_t = True
     print("Learning Threshold")
-for epoch in range(start_epoch, start_epoch+200):
+for epoch in range(start_epoch, start_epoch+n_epochs):
     scheduler.batch_step()
     for name,p in net.named_parameters():
         check = name.split('.')[-1]
