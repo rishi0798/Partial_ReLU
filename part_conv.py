@@ -74,7 +74,7 @@ class Conv2d_part(_ConvNd):
         self.comp_channels = comp_channels
 
     def forward(self, input):
-        compare = F.conv2d(input[:,:self.in_channels//self.comp_channels],self.weight[:,:self.in_channels//2,:,:],self.bias,
+        compare = F.conv2d(input[:,:self.in_channels//self.comp_channels],self.weight[:,:self.in_channels//self.comp_channels,:,:],self.bias,
                         self.stride,self.padding,self.dilation,self.groups)
         compare = compare.detach()
         # check_sparse = compare.clone()
